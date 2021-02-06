@@ -27,5 +27,5 @@ Additionally, the accuracy of the application can be evaluated via side by side 
 
 Realistically, it is possible to create the desktop application version of the visual-based tuner which will match pre-recorded string footage to its corresponding pitch and/or determine the closest known pitch. It is unlikely that live video feed analysis and the mobile application conversion will be achievable in the project’s time period. Mobile application development is beyond the scope of this course, but it would be the ideal medium to host the application when coupled with live video feed analysis, as a mobile application would be better suited to use when tuning a guitar.
 
-#Schedule
+# Schedule
 ![plot](./image/Milestones.png)
