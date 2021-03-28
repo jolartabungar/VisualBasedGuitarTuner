@@ -20,6 +20,7 @@ winControls = 'Controls'
 winResults1 = 'Edge Detection Results'
 winResults2 = 'Harris Corner Detection Results'
 winResults3 = 'Fast Feature Detection Results'
+winResults4 = 'Hough Line Transform'
 
 
 def main():
@@ -102,7 +103,7 @@ def main():
         edge = cv.Canny(gray_image, thrs1, thrs2, apertureSize=5)
 
         vis = original_image.copy()
-        vis = np.uint8(vis/2.)
+        vis = np.uint8(vis / 2.)
         vis[edge != 0] = (0, 255, 0)
         result = vis
 
@@ -119,6 +120,22 @@ def main():
 
         cv.imshow(winResults3, result)
 
+    def hough(img, gray):
+
+        thrs3 = cv.getTrackbarPos('thrs3', winControls)
+        img_copy = img.copy()
+
+        edges = cv.Canny(gray, 50, 150, apertureSize=3)
+        cv.imshow("canny",edges)
+
+        linesP = cv.HoughLinesP(edges, 1, np.pi / 180, thrs3, None, 50, 10)
+        print(linesP)
+        if linesP is not None:
+            for i in range(0, len(linesP)):
+                l = linesP[i][0]
+                cv.line(img_copy, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv.LINE_AA)
+        cv.imshow("Detected Lines (in red) - Probabilistic Line Transform", img_copy)
+
     def on_change(*arg):
         frame_pos = cv.getTrackbarPos('VideoFrame', winControls)
         cap.set(1, frame_pos)
@@ -129,6 +146,7 @@ def main():
         # canny_edge_detect(img, gray)
         fast_feature_detect(img, gray)
         # harris_corner_detect(gray)
+        hough(img, gray)
 
     cap = cv.VideoCapture("../data/vid1.mp4")
     frames_total = int(cap.get(7) - 1)
@@ -142,6 +160,9 @@ def main():
     # Harris Corner Detection
     # cv.createTrackbar('thrs3', winControls, 0, 20, on_change)
 
+    cv.createTrackbar('thrs3', winControls, 0, 500, on_change)
+
+
     # Scroll through frames
     cv.createTrackbar('VideoFrame', winControls, 0, frames_total, on_change)
 
@@ -153,4 +174,3 @@ def main():
 
 
 main()
-
