@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # This is assuming standard tuning for both bass and guitar
-
 # Define guitar string frequencies
 GUITAR_HIGH_E_STRING = 329.63
 GUITAR_B_STRING = 246.94
