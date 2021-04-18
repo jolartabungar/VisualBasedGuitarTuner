@@ -1,6 +1,8 @@
-from PyQt5.QtCore import Qt, QThread, QTimer
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QVBoxLayout, QApplication, QSlider, QHBoxLayout, QLabel
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QWidget, QPushButton, QVBoxLayout, \
+    QApplication, QSlider, QHBoxLayout, QLabel, QFileDialog, QComboBox
+import tuning_constants as tuning
+import pyqtgraph as pg
 import cv2 as cv
 import numpy as np
 
@@ -21,65 +23,95 @@ class UIWindow(QMainWindow):
         self.image = image
         self.setWindowTitle("Visual Based Guitar Tuner")
 
+        self.setMinimumHeight(1000)
+        self.setMinimumWidth(1000)
+
         self.central_widget = QWidget()
-        self.image_view = QLabel()
+        self.image_view = pg.ImageView()
+        self.image_view.roi.setSize([100, 800])
+        self.image_view.roi.setPos([0, 0])
 
-        # Sliders
+        # Video Selection & Controls
         self.slider_frame = create_slider([1, image.frames_total], self.update_frame)
-        self.slider_dilate_iter = create_slider([0, 10], self.update_dilate_iter)
-        self.slider_erode_iter = create_slider([0, 10], self.update_erode_iter)
-        self.slider_thresh1 = create_slider([0, 500], self.update_thresh1)
-        self.slider_thresh2 = create_slider([0, 500], self.update_thresh2)
-
         self.frame_label = QLabel("Frame: " + str(self.image.frame))
-        self.dilate_iter_label = QLabel("Dilate iterations: " + str(self.image.dilate_iteration))
-        self.erode_iter_label = QLabel("Erode iterations: " + str(self.image.erode_iteration))
-        self.thresh1_label = QLabel("Thresh 1: " + str(self.image.thresh1))
-        self.thresh2_label = QLabel("Thresh 2: " + str(self.image.thresh2))
 
-        # Toggle Button
-        self.toggle_canny = QPushButton("Toggle Canny/Trained", self)
-        self.toggle_canny.setCheckable(True)
-        self.toggle_canny.clicked.connect(self.toggle_canny_clicked)
+        self.toggle_image = QPushButton("Toggle Original/Processed", self)
+        self.toggle_image.setCheckable(True)
+        self.toggle_image.clicked.connect(self.toggle_image_clicked)
+
+        self.select_video_button = QPushButton("Select Video", self)
+        self.select_video_button.clicked.connect(self.open_filename_dialog)
+
+        # Tuning Selection Drop-down
+        self.tuning_set_dropdown_label = QLabel("Select tuning set: ")
+        self.tuning_string_dropdown_label = QLabel("Select selected string: ")
+
+        self.select_tuning = QComboBox()
+        self.select_tuning.addItem(tuning.BASS_STD)
+        self.select_tuning.addItem(tuning.BASS_5_STR_STD)
+        self.select_tuning.addItem(tuning.GUITAR_STD)
+        self.select_tuning.currentIndexChanged.connect(self.update_string_options)
+
+        self.select_string = QComboBox()
+        self.update_string_options(0)
+
+        # Tuning Analysis Results
+        self.analyzed_tuning_label = QLabel("Approximate tuning of string: " + str(self.image.detected_tuning()))
+
+        # Set Bounding Box
+        self.set_bounding_box_button = QPushButton("Set string region")
+        self.set_bounding_box_button.clicked.connect(self.set_bounding_box)
+
+        # Start tuning detection
+        self.start_tuning_detection_button = QPushButton("Start tuning detection")
+        self.start_tuning_detection_button.clicked.connect(self.start_tuning_detection)
+
+        # Add widgets to layout
+        self.tuning_selection_box = QHBoxLayout()
+        self.tuning_selection_box.addWidget(self.tuning_set_dropdown_label)
+        self.tuning_selection_box.addWidget(self.select_tuning)
+        self.tuning_selection_box.addWidget(self.tuning_string_dropdown_label)
+        self.tuning_selection_box.addWidget(self.select_string)
+        self.tuning_selection_box.addWidget(self.analyzed_tuning_label)
+        self.tuning_selection_box.addStretch()
+        self.tuning_selection_box.addWidget(self.set_bounding_box_button)
+        self.tuning_selection_box.addWidget(self.start_tuning_detection_button)
 
         self.slider_box_frame = QHBoxLayout()
+        self.slider_box_frame.addWidget(self.select_video_button)
+        self.slider_box_frame.addWidget(self.toggle_image)
         self.slider_box_frame.addWidget(self.frame_label)
         self.slider_box_frame.addWidget(self.slider_frame)
 
-        self.slider_box_thresh1 = QHBoxLayout()
-        self.slider_box_thresh1.addWidget(self.thresh1_label)
-        self.slider_box_thresh1.addWidget(self.slider_thresh1)
-
-        self.slider_box_thresh2 = QHBoxLayout()
-        self.slider_box_thresh2.addWidget(self.thresh2_label)
-        self.slider_box_thresh2.addWidget(self.slider_thresh2)
-
-        self.slider_box_dilate_iter = QHBoxLayout()
-        self.slider_box_dilate_iter.addWidget(self.dilate_iter_label)
-        self.slider_box_dilate_iter.addWidget(self.slider_dilate_iter)
-
-        self.slider_box_erode_iter = QHBoxLayout()
-        self.slider_box_erode_iter.addWidget(self.erode_iter_label)
-        self.slider_box_erode_iter.addWidget(self.slider_erode_iter)
-
-        self.edge_detect_controls_box = QHBoxLayout()
-        self.edge_detect_sliders_box = QVBoxLayout()
-        self.edge_detect_sliders_box.addLayout(self.slider_box_thresh1)
-        self.edge_detect_sliders_box.addLayout(self.slider_box_thresh2)
-        self.edge_detect_controls_box.addWidget(self.toggle_canny)
-        self.edge_detect_controls_box.addLayout(self.edge_detect_sliders_box)
-
         self.controls_layout = QVBoxLayout()
         self.controls_layout.addLayout(self.slider_box_frame)
-        self.controls_layout.addLayout(self.slider_box_dilate_iter)
-        self.controls_layout.addLayout(self.slider_box_erode_iter)
-        self.controls_layout.addLayout(self.edge_detect_controls_box)
+        self.controls_layout.addLayout(self.tuning_selection_box)
 
+        self.tuning_options_layout = QHBoxLayout()
+
+        # Add all layouts to main window
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.addLayout(self.controls_layout)
         self.layout.addWidget(self.image_view)
         self.setCentralWidget(self.central_widget)
 
+        self.update_image()
+
+    def open_filename_dialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filename, _ = QFileDialog.getOpenFileName(self,
+                                                  "QFileDialog.getOpenFileName()", "../data",
+                                                  "All Files (*);;Python Files (*.py)", options=options)
+        if filename:
+            self.image.set_video_path(filename)
+            self.update_image()
+
+    def toggle_image_clicked(self):
+        if self.toggle_image.isChecked():
+            self.image.show_processed = False
+        else:
+            self.image.show_processed = True
         self.update_image()
 
     def update_frame(self):
@@ -89,47 +121,30 @@ class UIWindow(QMainWindow):
         if not self.slider_frame.isSliderDown():
             self.update_image()
 
-    def update_dilate_iter(self):
-        value = self.slider_dilate_iter.value()
-        self.image.set_dilate_iteration(value)
-        self.dilate_iter_label.setText("Dilate iteration: " + str(value))
-        if not self.slider_dilate_iter.isSliderDown():
-            self.update_image()
+    def update_string_options(self, tuning_index):
+        tuning_set = self.select_tuning.itemText(tuning_index)
+        self.select_string.clear()
+        self.select_string.addItems(tuning.tuning_map(tuning_set))
+        self.select_string.currentIndexChanged.connect(self.update_selected_string)
 
-    def update_erode_iter(self):
-        value = self.slider_erode_iter.value()
-        self.image.set_erode_iteration(value)
-        self.erode_iter_label.setText("Erode iteration: " + str(value))
-        if not self.slider_erode_iter.isSliderDown():
-            self.update_image()
+    def update_selected_string(self, string_index):
+        self.image.set_selected_string(self.select_string.itemText(string_index))
+        self.analyzed_tuning_label.setText("Approximate tuning of string: " + str(self.image.detected_tuning()))
 
-    def update_thresh1(self):
-        value = self.slider_thresh1.value()
-        self.image.set_thresh1(value)
-        self.thresh1_label.setText("Thresh 1: " + str(value))
-        if not self.slider_thresh1.isSliderDown():
-            self.update_image()
+    def set_bounding_box(self):
+        pos = self.image_view.roi.pos()
+        size = self.image_view.roi.size()
+        p1 = pos
+        p2 = pos + size
+        bounding_box = [p1, p2]
+        self.image.set_bounding_box(bounding_box)
 
-    def update_thresh2(self):
-        value = self.slider_thresh2.value()
-        self.image.set_thresh2(value)
-        self.thresh2_label.setText("Thresh 2: " + str(value))
-        if not self.slider_thresh2.isSliderDown():
-            self.update_image()
-
-    def toggle_canny_clicked(self):
-        if self.toggle_canny.isChecked():
-            self.image.use_canny = True
-        else:
-            self.image.use_canny = False
-        self.update_image()
+    def start_tuning_detection(self):
+        self.image.start_tuning_detection()
 
     def update_image(self):
         rgb_image = cv.cvtColor(self.image.get_image(), cv.COLOR_BGR2RGB)
-        height, width, channel = rgb_image.shape
-        bytes_per_line = 3 * width
-        q_img = QImage(rgb_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
-        self.image_view.setPixmap(QPixmap.fromImage(q_img))
+        self.image_view.setImage(np.rot90(np.fliplr(rgb_image)))
 
 
 if __name__ == '__main__':
