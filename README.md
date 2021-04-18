@@ -35,10 +35,10 @@ Realistically, it is possible to create the desktop application version of the v
 
 # Setup Guide
 Install the following python packages:
-- PyQt5
 - opencv-contrib-python
+- PyQt5
+- pyqtgraph
 - scikit-image
-- matplotlib
 
 # Running Visual Based Guitar Tuner Application
 - Download the sample videos from the link above and place them in a folder called data at the repository root (only the bass_tuned_1.mp4 is required)
