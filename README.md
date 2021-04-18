@@ -29,3 +29,26 @@ Realistically, it is possible to create the desktop application version of the v
 
 # Schedule
 ![plot](./image/Milestones.png)
+
+# Sample Videos
+[Download sample videos](https://drive.google.com/drive/folders/1-gGsge0LZ-OofLz3W2sh0KIgWmB1FDzY?usp=sharing)
+
+# Setup Guide
+Install the following python packages:
+- PyQt5
+- opencv-contrib-python
+- scikit-image
+- matplotlib
+
+# Running Visual Based Guitar Tuner Application
+- Download the sample videos from the link above and place them in a folder called data at the repository root (only the bass_tuned_1.mp4 is required)
+- Run app.py using a terminal or IDE
+- Select a video by clicking the 'Select video' button
+- Click ROI on the bottom left
+- Adjust the ROI to fit a desired string, do not go past the bounds of the image and click 'Select string region'
+- Navigate to a frame with a string in motion and click 'Start tuning detection'
+- Advance the frame by 1 until the next peak or trough matches the initial frame
+- Tuning of string will be displayed, tune instrument accordingly
+
+
+
