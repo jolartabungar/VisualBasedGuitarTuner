@@ -68,29 +68,29 @@ def find_comparison_string_bass(freq):
 # Print the name of the known string with the input frequency
 def print_string(frequency):
     if frequency == GUITAR_HIGH_E_STRING:
-        return "GUITAR_HIGH_E_STRING"
+        return "E"
     elif frequency == GUITAR_B_STRING:
-        return "GUITAR_B_STRING"
+        return "B"
     elif frequency == GUITAR_G_STRING:
-        return "GUITAR_G_STRING"
+        return "G"
     elif frequency == GUITAR_D_STRING:
-        return "GUITAR_D_STRING"
+        return "D"
     elif frequency == GUITAR_A_STRING:
-        return "GUITAR_A_STRING"
+        return "A"
     elif frequency == GUITAR_LOW_E_STRING:
-        return "GUITAR_LOW_E_STRING"
+        return "E"
     elif frequency == BASS_C_STRING:
-        return "BASS_C_STRING"
+        return "C"
     elif frequency == BASS_G_STRING:
-        return "BASS_G_STRING"
+        return "G"
     elif frequency == BASS_D_STRING:
-        return "BASS_D_STRING"
+        return "D"
     elif frequency == BASS_A_STRING:
-        return "BASS_A_STRING"
+        return "A"
     elif frequency == BASS_E_STRING:
-        return "BASS_E_STRING"
+        return "E"
     elif frequency == BASS_B_STRING:
-        return "BASS_B_STRING"
+        return "B"
     else:
         return "unknown"
 
@@ -98,18 +98,25 @@ def print_string(frequency):
 # Compare the string with the calculated comparison string
 def compare(actual, compared):
     if actual > compared:
-        return "sharp"
+        return ">"
     elif actual < compared:
-        return "flat"
+        return "<"
     else:
-        return "tuned"
+        return "="
 
 
 # The main function to tune a string
-def tune(freq):
+def tune_guitar(freq):
     comparison = find_comparison_string_guitar(freq)
     result = compare(freq, comparison)
     print(print_string(comparison) + ": " + result)
+
+
+def tune_bass(freq):
+    comparison = find_comparison_string_bass(freq)
+    result = compare(freq, comparison)
+    print(print_string(comparison) + ": " + result)
+    return str(result + ' ' + print_string(comparison))
 
 
 def main():
@@ -120,7 +127,5 @@ def main():
     print("Result: " + compare(102.25, GUITAR_A_STRING))
 
     print("\ntune(158.387)")
-    tune(158.387)
+    tune_guitar(158.387)
 
-
-main()
