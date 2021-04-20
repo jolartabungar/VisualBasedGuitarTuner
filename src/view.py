@@ -119,7 +119,9 @@ class UIWindow(QMainWindow):
         self.image.set_frame(value)
         self.frame_label.setText("Frame: " + str(value))
         if not self.slider_frame.isSliderDown():
+            self.image.final_frame_index = value
             self.update_image()
+            self.analyzed_tuning_label.setText("Approximate tuning of string: " + str(self.image.detected_tuning()))
 
     def update_string_options(self, tuning_index):
         tuning_set = self.select_tuning.itemText(tuning_index)
@@ -140,6 +142,7 @@ class UIWindow(QMainWindow):
         self.image.set_bounding_box(bounding_box)
 
     def start_tuning_detection(self):
+        self.image.initial_frame_index = self.slider_frame.value()
         self.image.start_tuning_detection()
 
     def update_image(self):
